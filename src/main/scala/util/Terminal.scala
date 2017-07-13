@@ -1,5 +1,7 @@
 package util
 
+import util.JobInstruction.NoInstruction
+
 import scala.util.parsing.combinator.RegexParsers
 
 /**
@@ -11,7 +13,9 @@ trait Terminal {
 
   protected object Command {
 
-    case class Job(count: Int, jobType: JobType, limit: Int) extends Command
+    case class Job(id: String) extends Command
+
+    case class JobCommand(jobId: String, instruction: JobInstruction) extends Command
 
     case object Status extends Command
 
@@ -32,28 +36,40 @@ trait Terminal {
       }
 
     def createJob: Parser[Command.Job] =
-      opt(int) ~ ("job|j".r ~> opt(jobtype) ~ opt(int)) ^^ {
-        case count ~ (jobType ~ limit) =>
+      ("job|j".r ~> opt(str)) ^^ {
+        case id =>
           Command.Job(
-            count getOrElse 1,
-            jobType getOrElse JobType.FileToFile,
-            limit getOrElse Int.MaxValue
+            id getOrElse "a"
           )
       }
 
-    def getStatus: Parser[Command.Status.type] =
-      "status|s".r ^^ (_ => Command.Status)
+    def triggerJobCommand: Parser[Command.JobCommand] =
+      ("jobCommand|jc".r ~> opt(str) ~ opt(jobinstruction)) ^^ { // ~ opt(parameter) ~ opt(parameter)
+        case j ~ instruction =>
+          Command.JobCommand(
+            j getOrElse "a",
+            instruction getOrElse NoInstruction
+          )
+      }
 
     def quit: Parser[Command.Quit.type] =
       "quit|q".r ^^ (_ => Command.Quit)
 
-    def jobtype: Parser[JobType] =
-      "FF|FD|DF|ff|fd|df".r ^^ JobType.apply
+    def jobinstruction: Parser[JobInstruction] =
+    "NI|ni|PF|pf|SF|sf".r ^^ JobInstruction.apply
 
     def int: Parser[Int] =
       """\d+""".r ^^ (_.toInt)
+
+    def str: Parser[String] =
+      "[a-zA-Z0-9_]*".r ^^ (s => s.toString)//"""\\S+""".r ^^ (_.toString)
+
+    //    def getStatus: Parser[Command.Status.type] =
+    //      "status|s".r ^^ (_ => Command.Status)
   }
 
   private val parser: CommandParser.Parser[Command] =
-    CommandParser.createJob | CommandParser.getStatus | CommandParser.quit
+    CommandParser.triggerJobCommand | CommandParser.createJob  | CommandParser.quit
+    // | CommandParser.getStatus |
+
 }

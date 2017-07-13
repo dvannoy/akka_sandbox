@@ -4,12 +4,12 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.event.Logging
-import akka.example.DataProcessor.CreateJob
+import akka.example.JobManager.CreateJob
 import akka.pattern.ask
 import akka.util.Timeout
 
 import scala.io.StdIn
-import util.Terminal
+import util.{JobInstruction, Terminal}
 
 import scala.annotation.tailrec
 
@@ -21,10 +21,10 @@ class DataProcessorApp(system: ActorSystem) extends Terminal {
   private val log = Logging(system, getClass.getName)
   implicit private val dataProcessorTimeout = Timeout(100, TimeUnit.SECONDS)
 
-  private val processor = createProcessor()
+  private val manager = createManager()
 
-  def createProcessor(): ActorRef =
-  system.actorOf(DataProcessor.props(), "data-processor")
+  def createManager(): ActorRef =
+  system.actorOf(JobManager.props(), "job-manager")
 
   def run(): Unit = {
     commandLoop()
@@ -33,13 +33,16 @@ class DataProcessorApp(system: ActorSystem) extends Terminal {
   }
 
   @tailrec
-  private def commandLoop(): Unit =
+  private def commandLoop(): Unit = {
+    println("Enter instructions...")
+    println("  j <id> = create new job")
+    println("   jc <instruction> = send new instruction")
     Command(StdIn.readLine()) match {
-      case Command.Job(count, jobType, limit) =>
-        (1 to count).foreach { _ => processor ! CreateJob(jobType, limit) }
+      case Command.Job(id) =>
+        manager ! CreateJob(id)
         commandLoop
-      case Command.Status =>
-        status()
+      case Command.JobCommand(job: String, instruction: JobInstruction) =>
+        manager ! "IT WORKED"
         commandLoop
       case Command.Quit =>
         system.terminate
@@ -47,11 +50,11 @@ class DataProcessorApp(system: ActorSystem) extends Terminal {
         log.warning("Unknown command {}", command)
         commandLoop
     }
-
-  import system.dispatcher
-  protected def status(): Unit = {
-    val response = processor ? DataProcessor.GetStatus
   }
+//  import system.dispatcher
+//  protected def status(): Unit = {
+//    val response = processor ? DataProcessor.GetStatus
+//  }
 
 }
 
