@@ -3,6 +3,7 @@ package akka.example
 import java.io.OutputStream
 
 import akka.actor.{Actor, ActorLogging, Props}
+import akka.dispatch.sysmsg.Terminate
 import akka.example.Job.{CopyFile, PrintFile}
 
 /**
@@ -24,7 +25,7 @@ class Job(id: String) extends Actor with ActorLogging {
 }
 
 object Job {
-  case class PrintFile(output: OutputStream)
+  case class PrintFile(output: AnyRef)
   case class CopyFile(inputPath: AnyRef, outputPath: AnyRef)
 
   def props(id: String): Props = Props(classOf[Job], id)

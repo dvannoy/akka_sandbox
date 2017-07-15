@@ -15,7 +15,9 @@ trait Terminal {
 
     case class Job(id: String) extends Command
 
-    case class JobCommand(jobId: String, instruction: JobInstruction) extends Command
+    case class JobCommand(jobId: String, instruction: JobInstruction, parameter1: String, parameter2: String) extends Command
+
+    case class Kill(job: String) extends Command
 
     case object Status extends Command
 
@@ -44,11 +46,13 @@ trait Terminal {
       }
 
     def triggerJobCommand: Parser[Command.JobCommand] =
-      ("jobCommand|jc".r ~> opt(str) ~ opt(jobinstruction)) ^^ { // ~ opt(parameter) ~ opt(parameter)
-        case j ~ instruction =>
+      ("jobCommand|jc".r ~> opt(str) ~ opt(jobinstruction) ~ opt(str) ~ opt(str)) ^^ {
+        case j ~ instruction ~ p1 ~ p2=>
           Command.JobCommand(
             j getOrElse "a",
-            instruction getOrElse NoInstruction
+            instruction getOrElse NoInstruction,
+            p1 getOrElse "",
+            p2 getOrElse ""
           )
       }
 
@@ -62,14 +66,17 @@ trait Terminal {
       """\d+""".r ^^ (_.toInt)
 
     def str: Parser[String] =
-      "[a-zA-Z0-9_]*".r ^^ (s => s.toString)//"""\\S+""".r ^^ (_.toString)
+      "[a-zA-Z0-9_/#-]*".r ^^ (s => s.toString)  //"""\\S+""".r ^^ (_.toString)
+
+    def kill: Parser[Command.Kill] =
+      ("kill|k".r ~> str) ^^ { case j => Command.Kill(j) }
 
     //    def getStatus: Parser[Command.Status.type] =
     //      "status|s".r ^^ (_ => Command.Status)
   }
 
   private val parser: CommandParser.Parser[Command] =
-    CommandParser.triggerJobCommand | CommandParser.createJob  | CommandParser.quit
+    CommandParser.triggerJobCommand | CommandParser.createJob  | CommandParser.quit | CommandParser.kill
     // | CommandParser.getStatus |
 
 }
