@@ -19,27 +19,12 @@ class Job(id: String) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case PrintFile(inputPath) =>
-      log.info("In Print File InputFile case")
-      closing(Source.fromFile(inputPath)) { source=>
-        source.getLines.foreach(println)
-      }
+      ???
     case CopyFile(in, out) =>
       ???
     case _ => sender() ! "Invalid command received"
 
   }
-
-
-
-  def closing(in: BufferedSource)(body: BufferedSource => Unit): Unit = {
-    val input = in
-    try {
-      body(input)
-    } finally {
-      input.close()
-    }
-  }
-
 }
 
 object Job {
