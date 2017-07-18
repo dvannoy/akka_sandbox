@@ -12,14 +12,4 @@ object JobInstruction {
   case object PrintFileInstruction extends JobInstruction
   case object CopyFileInstruction extends JobInstruction
 
-  def apply(code: String): JobInstruction =
-    code.toLowerCase match {
-      case "ni" => NoInstruction
-      case "pf" => PrintFileInstruction
-      case "sf" => CopyFileInstruction
-      case _ => throw new IllegalArgumentException(s"""Unkown value $code""")
-    }
-
-
-
 }
